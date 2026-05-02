@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Love, Reinvented — A Journey Through Nine Doors</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --burgundy: #4a1b2a;
+    --burgundy-dark: #2b1318;
+    --burgundy-deeper: #1a0a0d;
+    --rose: #c99987;
+    --gold: #b8894e;
+    --gold-light: #d4af7f;
+    --gold-dim: #6e5230;
+    --cream: #f4ede4;
+    --cream-dark: #e6dcce;
+    --ink: #2b1318;
+    --ink-soft: #5a3b44;
+  }
+  html, body {
+    height: 100%; overflow: hidden;
+    font-family: Georgia, 'Times New Roman', serif;
+    background: var(--burgundy-deeper); color: var(--cream);
+    -webkit-user-select: none; user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ---------- Intro ---------- */
+  #intro {
+    position: fixed; inset: 0; z-index: 1000;
+    background: radial-gradient(ellipse at center, var(--burgundy) 0%, var(--burgundy-deeper) 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 2rem;
+    transition: opacity .6s ease; overflow-y: auto;
+  }
+  #intro.hidden { opacity: 0; pointer-events: none; }
+  #intro .subtitle {
+    font-family: Calibri, Helvetica, sans-serif;
+    font-size: .72rem; letter-spacing: .6em; color: var(--gold);
+    text-transform: uppercase; margin-bottom: 1.5rem;
+  }
+  #intro h1 {
+    font-style: italic; font-weight: normal;
+    font-size: clamp(3rem, 10vw, 6.5rem); color: var(--cream);
+    line-height: 1; margin-bottom: 0.2rem;
+  }
+  #intro h1 b { color: var(--gold); font-weight: normal; }
+  #intro .ornament {
+    width: 120px; height: 1px; background: var(--gold);
+    margin: 2rem 0; position: relative;
+  }
+  #intro .ornament::before, #intro .ornament::after {
+    content: '◆'; position: absolute; top: 50%; transform: translateY(-50%);
+    color: var(--gold); font-size: .6rem;
+  }
+  #intro .ornament::before { left: -20px; }
+  #intro .ornament::after { right: -20px; }
+  #intro p.pitch {
+    max-width: 560px; font-size: clamp(1rem, 2.3vw, 1.15rem); line-height: 1.7;
+    color: var(--rose); margin-bottom: 2.5rem; font-style: italic;
+  }
+  #intro p.pitch em { color: var(--gold); font-style: italic; }
+  #intro .controls-hint {
+    display: flex; gap: 2.5rem; color: var(--cream); font-size: .85rem;
+    margin-bottom: 2.5rem; flex-wrap: wrap; justify-content: center;
+    font-family: Calibri, Helvetica, sans-serif;
+  }
+  #intro .controls-hint .key {
+    background: var(--gold); color: var(--ink);
+    padding: .2rem .55rem; border-radius: 3px;
+    font-family: 'Courier New', monospace; font-weight: bold;
+    margin-right: .4rem; display: inline-block;
+  }
+  #begin-btn {
+    background: transparent; color: var(--cream);
+    border: 1px solid var(--gold); padding: .9rem 3rem;
+    font-family: Georgia, serif; font-style: italic;
+    font-size: 1.3rem; cursor: pointer; letter-spacing: .25em;
+    transition: all .3s; text-transform: uppercase;
+  }
+  #begin-btn:hover, #begin-btn:focus {
+    background: var(--gold); color: var(--ink); outline: none;
+  }
+  #intro .credit {
+    margin-top: 3rem; font-size: .7rem; color: var(--gold-dim);
+    letter-spacing: .3em; font-family: Calibri, Helvetica, sans-serif;
+  }
+
+  /* ---------- HUD ---------- */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.5rem; pointer-events: none;
+    font-family: Calibri, Helvetica, sans-serif;
+    color: var(--cream); font-size: .72rem; letter-spacing: .3em;
+    text-transform: uppercase;
+    background: linear-gradient(to bottom, rgba(26,10,13,.6) 0%, transparent 100%);
+  }
+  #hud .title { color: var(--gold); font-weight: bold; }
+  #hud .location {
+    font-family: Georgia, serif; font-style: italic;
+    font-size: .95rem; letter-spacing: .05em; text-transform: none;
+    color: var(--cream);
+  }
+  #hud .progress { color: var(--rose); margin-left: 1rem; }
+  #hud .right { display: flex; align-items: center; gap: .5rem; }
+
+  canvas { display: block; width: 100vw; height: 100vh; background: var(--burgundy-deeper); }
+
+  /* ---------- Door prompt ---------- */
+  #door-prompt {
+    position: fixed; bottom: 18vh; left: 50%; transform: translateX(-50%);
+    background: var(--gold); color: var(--ink);
+    padding: .55rem 1.2rem; border-radius: 3px;
+    font-family: Georgia, serif; font-style: italic;
+    font-size: .95rem; opacity: 0; transition: opacity .2s;
+    pointer-events: none; z-index: 20; white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,.5);
+  }
+  #door-prompt.show { opacity: 1; }
+  #door-prompt kbd {
+    background: var(--ink); color: var(--gold);
+    padding: .1rem .4rem; border-radius: 2px;
+    font-family: 'Courier New', monospace; font-weight: bold;
+    margin: 0 .2rem; font-style: normal; font-size: .85rem;
+  }
+
+  /* ---------- Mobile controls ---------- */
+  #controls {
+    position: fixed; bottom: 1.5rem; left: 0; right: 0; z-index: 15;
+    display: none; justify-content: center; gap: 1.5rem;
+    pointer-events: none;
+  }
+  #controls button {
+    width: 62px; height: 62px; border-radius: 50%;
+    background: rgba(74,27,42,.85); color: var(--gold);
+    border: 1.5px solid var(--gold); font-size: 1.4rem;
+    cursor: pointer; backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    pointer-events: all;
+    font-family: Georgia, serif;
+  }
+  #controls button:active { background: var(--gold); color: var(--ink); }
+  @media (pointer: coarse), (max-width: 780px) { #controls { display: flex; } }
+
+  /* ---------- Room modal ---------- */
+  #room {
+    position: fixed; inset: 0; z-index: 100;
+    background: var(--burgundy-deeper);
+    overflow-y: auto; overflow-x: hidden;
+    opacity: 0; pointer-events: none;
+    transition: opacity .4s ease;
+    -webkit-overflow-scrolling: touch;
+  }
+  #room.open { opacity: 1; pointer-events: all; }
+  #room .room-inner {
+    max-width: 1080px; margin: 0 auto;
+    padding: 2.5rem 1.5rem 6rem;
+  }
+  #room .back {
+    background: transparent; border: 1px solid var(--gold-dim);
+    color: var(--rose); padding: .5rem 1.1rem;
+    font-family: Georgia, serif; font-style: italic;
+    font-size: .9rem; cursor: pointer; margin-bottom: 2rem;
+    transition: all .2s;
+  }
+  #room .back:hover { border-color: var(--gold); color: var(--cream); }
+  #room .era-label {
+    color: var(--gold); font-size: .72rem; letter-spacing: .5em;
+    margin-bottom: .5rem; text-transform: uppercase;
+    font-family: Calibri, Helvetica, sans-serif;
+  }
+  #room .dates {
+    color: var(--rose); font-style: italic;
+    font-size: .95rem; margin-bottom: 1.5rem;
+  }
+  #room h1 {
+    font-style: italic; font-weight: normal;
+    font-size: clamp(2.2rem, 6vw, 3.8rem);
+    color: var(--cream); line-height: 1.05; margin-bottom: .3rem;
+  }
+  #room h1 b { color: var(--gold); font-weight: normal; }
+  #room .tagline {
+    font-size: clamp(1.05rem, 2.2vw, 1.3rem);
+    color: var(--rose); margin-bottom: 2.5rem; font-style: italic;
+    max-width: 700px;
+  }
+  #room hr.ornament {
+    border: 0; height: 1px; background: var(--gold);
+    width: 60px; margin: 2rem 0;
+  }
+
+  #room .grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 3rem; align-items: start;
+  }
+  @media (max-width: 820px) { #room .grid { grid-template-columns: 1fr; gap: 2rem; } }
+
+  #room .artwork {
+    background: var(--burgundy); padding: 1.8rem;
+    border: 1px solid var(--gold); position: relative;
+    box-shadow: 0 10px 40px rgba(0,0,0,.4);
+  }
+  #room .artwork::before, #room .artwork::after {
+    content: ''; position: absolute; width: 18px; height: 18px;
+    border: 1px solid var(--gold);
+  }
+  #room .artwork::before { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+  #room .artwork::after  { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+  #room .artwork svg, #room .artwork img {
+    width: 100%; height: auto; display: block;
+  }
+  #room .artwork .cap {
+    color: var(--rose); font-family: Georgia, serif; font-style: italic;
+    text-align: center; margin-top: 1.2rem; font-size: .9rem;
+  }
+
+  #room .prose { color: var(--cream); line-height: 1.75; font-size: 1.05rem; }
+  #room .prose p { margin-bottom: 1rem; }
+  #room .prose strong { color: var(--cream); font-weight: bold; }
+  #room .prose em { color: var(--gold); font-style: italic; }
+
+  #room .theory {
+    background: var(--burgundy); border-left: 3px solid var(--gold);
+    padding: 1.2rem 1.6rem; margin: 1.5rem 0;
+  }
+  #room .theory .label {
+    color: var(--gold); font-size: .7rem; letter-spacing: .3em;
+    text-transform: uppercase; margin-bottom: .35rem;
+    font-family: Calibri, Helvetica, sans-serif; font-weight: bold;
+  }
+  #room .theory .thinker {
+    color: var(--rose); font-style: italic;
+    margin-bottom: .5rem; font-size: .95rem;
+  }
+  #room .theory .idea {
+    color: var(--cream); font-size: 1rem; line-height: 1.6;
+  }
+
+  #room .quote {
+    border-top: 1px solid var(--gold); border-bottom: 1px solid var(--gold);
+    padding: 1.3rem 0; margin: 2rem 0; text-align: center;
+  }
+  #room .quote .text {
+    font-style: italic; font-size: 1.2rem;
+    color: var(--cream); line-height: 1.4; margin-bottom: .6rem;
+  }
+  #room .quote .attr {
+    color: var(--rose); font-size: .8rem; letter-spacing: .15em;
+    text-transform: uppercase;
+    font-family: Calibri, Helvetica, sans-serif;
+  }
+
+  #room .tags {
+    display: flex; flex-wrap: wrap; gap: .5rem; margin: 1.5rem 0;
+  }
+  #room .tag {
+    background: var(--burgundy); border: 1px solid var(--gold);
+    color: var(--gold); padding: .35rem .85rem;
+    border-radius: 20px; font-size: .7rem; letter-spacing: .12em;
+    text-transform: uppercase;
+    font-family: Calibri, Helvetica, sans-serif;
+  }
+  #room .tag b { color: var(--cream); font-weight: normal; }
+
+  #room .room-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 3rem; padding-top: 2rem; gap: 1rem; flex-wrap: wrap;
+    border-top: 1px solid rgba(184,137,78,.25);
+  }
+  #room .room-footer .nav-btn {
+    background: transparent; color: var(--cream);
+    border: 1px solid var(--gold); padding: .7rem 1.5rem;
+    font-family: Georgia, serif; font-style: italic; font-size: .95rem;
+    cursor: pointer; transition: all .3s;
+  }
+  #room .room-footer .nav-btn:hover:not(:disabled) {
+    background: var(--gold); color: var(--ink);
+  }
+  #room .room-footer .nav-btn:disabled {
+    opacity: .3; cursor: not-allowed;
+  }
+  #room .room-footer .era-num {
+    color: var(--gold-dim); font-size: .8rem; letter-spacing: .3em;
+    font-family: Calibri, Helvetica, sans-serif;
+  }
+
+  /* ---------- Thesis overlay ---------- */
+  #thesis {
+    position: fixed; inset: 0; z-index: 200;
+    background: radial-gradient(ellipse at center, var(--burgundy) 0%, var(--burgundy-deeper) 100%);
+    display: none; align-items: center; justify-content: center;
+    padding: 2rem; text-align: center; overflow-y: auto;
+  }
+  #thesis.show { display: flex; }
+  #thesis .content { max-width: 720px; }
+  #thesis .label {
+    color: var(--gold); font-size: .75rem; letter-spacing: .6em;
+    text-transform: uppercase; margin-bottom: 1.5rem;
+    font-family: Calibri, Helvetica, sans-serif;
+  }
+  #thesis h2 {
+    font-style: italic; font-weight: normal;
+    font-size: clamp(1.7rem, 4vw, 2.5rem); color: var(--cream);
+    line-height: 1.3; margin-bottom: 2rem;
+  }
+  #thesis h2 em { color: var(--gold); font-style: italic; }
+  #thesis p {
+    color: var(--rose); font-size: 1.08rem;
+    line-height: 1.7; margin-bottom: .8rem; font-style: italic;
+  }
+  #thesis .punch {
+    color: var(--gold); font-size: 1.3rem;
+    margin-top: 2rem; font-weight: normal;
+  }
+  #thesis button {
+    background: transparent; color: var(--cream);
+    border: 1px solid var(--gold); padding: .8rem 2rem;
+    cursor: pointer; font-family: Georgia, serif; font-style: italic;
+    font-size: 1rem; margin-top: 2.5rem; letter-spacing: .2em;
+    text-transform: uppercase;
+  }
+  #thesis button:hover { background: var(--gold); color: var(--ink); }
+
+  /* ---------- Fade-in for room content ---------- */
+  #room .room-inner > * { animation: fadeUp .5s ease both; }
+  #room .room-inner > *:nth-child(2) { animation-delay: .05s; }
+  #room .room-inner > *:nth-child(3) { animation-delay: .1s; }
+  #room .room-inner > *:nth-child(4) { animation-delay: .15s; }
+  #room .room-inner > *:nth-child(5) { animation-delay: .2s; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro">
+  <div class="subtitle">A journey through nine doors</div>
+  <h1>Love, <b>Reinvented</b></h1>
+  <div class="ornament"></div>
+  <p class="pitch">Step into a corridor that spans eleven thousand years. Behind each door is an era in Western art and a different answer to the same question: <em>what does it mean to love?</em></p>
+  <div class="controls-hint">
+    <div><span class="key">← →</span>walk</div>
+    <div><span class="key">↑</span>or<span class="key" style="margin-left:.4rem">E</span>enter door</div>
+    <div><span class="key">ESC</span>exit room</div>
+  </div>
+  <button id="begin-btn">Begin</button>
+  <div class="credit">LOVE ACTUALLY · FINAL CREATIVE PROJECT</div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="title">LOVE, REINVENTED</div>
+  <div class="right">
+    <div class="location" id="hud-location">The Entrance Hall</div>
+    <div class="progress" id="hud-progress">0 / 9</div>
+  </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div id="door-prompt">Press <kbd>E</kbd> to enter</div>
+
+<div id="controls">
+  <button id="btn-left" aria-label="Walk left">←</button>
+  <button id="btn-enter" aria-label="Enter door">↑</button>
+  <button id="btn-right" aria-label="Walk right">→</button>
+</div>
+
+<div id="room"></div>
+
+<div id="thesis">
+  <div class="content">
+    <div class="label">The Obstacle Thesis</div>
+    <h2>From Plato's ladder to the Tinder feed, love in Western art is a history of <em>mediation</em>.</h2>
+    <p>Every era invents a new obstacle for love to pass through — the chapel, the troubadour's distance, the novel, the veil, the screen.</p>
+    <p>Love without an obstacle isn't recognisable as love.</p>
+    <div class="punch">We are in love with the obstacle.</div>
+    <button id="thesis-close">Return to the corridor</button>
+  </div>
+</div>
+
+<script>
+// ===========================================================================
+// THE NINE ERAS — 3 per presenter
+// Before 1600 (Speaker 1): Ancient Greek Myth, Medieval Courtly Love, Renaissance
+// 1600–1850s (Speaker 2): High Renaissance, Rococo, Romantic
+// Modern (Speaker 3):     Victorian, Modern, Contemporary
+// ===========================================================================
+const ERAS = [
+  // ============================ SPEAKER 1 ============================
+  {
+    id:'prehistoric', label:'ANCIENT GREEK MYTH', dates:'myth ancient · sculpture 1787 – 93',
+    title:['Love as the','<b>force that wakes the dead</b>.'],
+    tagline:'A kiss seconds away. The body still half-asleep. Greek love insists you must fight to deserve it.',
+    doorColor:'#5a3b44', accent:'#c99987',
+    prose:`<p>This sculpture is a perfect depiction of love in Ancient Greece, where there was strong emphasis on how powerful a feeling love can be. We witness Cupid seemingly able to revive Psyche from her sleep. The kiss they are about to share is the source of this magical awakening — love as a <em>supernatural force</em>.</p><p>There is a strong tension in the work. The two figures are about to kiss, perhaps seconds away — but the moment is suspended forever in stone. We never see them touch.</p><p>When you look deeper into the message behind the sculpture, you find that Greek romance strongly believes in <strong>"fighting for love."</strong> Psyche, before Cupid came to her rescue, lay in a death-like sleep — the result of a series of impossible trials Aphrodite had set for her, including a journey to the underworld. The battles Psyche endured are on par with the struggles typically associated with love in Ancient Greece. Love cannot be formed without a strong battle being fought first. It is the ultimate prize.</p><p><em>(The myth is ancient; the sculpture is Antonio Canova's, carved in Rome between 1787 and 1793. The version of love it shows — earned through ordeal, frozen one heartbeat before consummation — is unmistakably Greek.)</em></p>`,
+    theory:{label:'Love as ordeal', thinker:'Plato · Phaedrus · c. 370 BCE', idea:'Plato called the kind of love that overtakes us "theia mania" — divine madness. It is not chosen and not safe. It tears the soul open so the soul can grow wings. To love, in this tradition, is to be wounded into something larger than yourself.'},
+    quote:{text:'Love is the pursuit of the whole.', attr:'Aristophanes · Plato\'s Symposium · c. 385 BCE'},
+    tags:['<b>Érōs</b> + <b>Manía</b>','<b>Plato</b>','love as ordeal'],
+    artwork:'ainSakhri', artCaption:'Psyche Revived by Cupid\'s Kiss · Antonio Canova · 1787–93 · Louvre'
+  },
+  {
+    id:'courtly', label:'MEDIEVAL COURTLY LOVE', dates:'c. 1100 – 1400',
+    title:['Love, now requiring','an <b>obstacle</b>.'],
+    tagline:'The troubadour invents a new problem: falling in love with the person you cannot have.',
+    doorColor:'#4a1b2a', accent:'#b8894e',
+    prose:`<p>A very unique collection of artwork, <em>The Lady and the Unicorn</em> is made up of six total tapestries, each representing a different sense of the body. Five of them depict the five physical senses; the sixth, <em>"To My Only Desire,"</em> is commonly regarded as the most significant piece.</p><p>In each tapestry, a lady appears with a lion on her left and a unicorn on her right. In <em>"To My Only Desire,"</em> her hands rest inside a jewellery chest. It is unconfirmed whether she is taking the jewels out or placing them back in — but the common reading is that she is putting them away, symbolising a <strong>rejection of her physical desires</strong>. This puts strong weight on the willpower of the woman: her physical pleasures have been outlined through the five preceding tapestries, and now her mind is choosing differently. We are all capable of loving through the body. The mind choosing to love is more complex, and not as common.</p><p>This is a strong symbol of love moving past pleasure and material beauty toward a more intentional choice. When you compare the lion and the unicorn, they read as the contest between <em>control</em> and <em>desire</em>. The unicorn was the dominant figure through the five senses — the desires humans carry into love. Now, in the sixth tapestry, the lion is calm and central, almost as if its work is done. Restraint has been achieved. Her mind has acted, not her impulses.</p><p>This is a strong representation of love in the Middle Ages, when Christian values of self-control were prominent. The lady finding this restraint is the key thread running through all six tapestries. The lion represents duty and loyalty; the unicorn represents temptation and internal desires — desires that must not be allowed to lead.</p>`,
+    theory:{label:'The invention thesis', thinker:'Denis de Rougemont · 1939', idea:'Passion in the West was invented by 12th-century Provençal troubadours. "Happy love has no history." Tristan and Iseult don\'t love each other — they love being in love with being thwarted.'},
+    quote:{text:'An easy attainment makes love contemptible; a difficult one makes it more dear.', attr:'Andreas Capellanus · De Amore · c. 1186'},
+    tags:['<b>Manía</b>','<b>anxious</b> attachment','<b>de Rougemont</b>'],
+    artwork:'unicorn', artCaption:'The Lady and the Unicorn · c. 1500 · Musée de Cluny'
+  },
+  {
+    id:'renaissance', label:'RENAISSANCE', dates:'c. 1400 – 1600',
+    title:['Love, climbing','toward the <b>ideal</b>.'],
+    tagline:'Beauty seen ignites the soul\'s ascent. The Medici court paints Plato as a garden.',
+    doorColor:'#d4af7f', accent:'#4a1b2a',
+    prose:`<p>This painting encapsulates many of the ideologies of love in the times of the Renaissance. Within it, several stories unfold at once, each telling a different story about the functions of love.</p><p>Starting on the far right, Zephyrus grabs onto Chloris, who seems much less interested. Zephyrus is acting on love revolving around intensity and desire — overwhelming passion, but not very "natural." Just to her left, Chloris shifts into a different form: now Flora, the flower goddess. The shift represents the beauty of life in the form of beauty and fertility. In a more macro sense, it is striking to observe that love can evolve from its prior form of chaos and irrationality to something peaceful and blossoming.</p><p>On the far left, <em>Mercury</em> represents a more reasonable angle at love as he pushes away the clouds — unfogging individual judgment, a frequent effect of love on the brain. Removing these clouds lets us think more clearly, with intellectual thought taking its place inside our love. Beside him, three figures dance with each other in a calm, peaceful manner, while above them Cupid aims his bow without taking aim at a certain one. That randomness helps us see how unpredictable love can be — bliss catching us by surprise.</p><p>As the centerpiece, <em>Venus</em> can be viewed as the anchor of all the love in the world. From physical passion to intellectual connection, Venus gathers every angle of persevering love.</p>`,
+    theory:{label:'The consummate triangle', thinker:'Robert Sternberg', idea:'Intimacy + Passion + Commitment = consummate love. Botticelli stages every vertex at once — desire on the right, friendship in the dancing Graces, commitment in Venus at the centre.'},
+    quote:{text:'Love is a continuous desire to enjoy the beautiful.', attr:'Marsilio Ficino · De Amore · 1469'},
+    tags:['<b>Érōs</b> → <b>Agápē</b>','<b>Ficino</b> · <b>Sternberg</b>','the ladder'],
+    artwork:'hands', artCaption:'Primavera · Sandro Botticelli · c. 1480 · Uffizi'
+  },
+  // ============================ SPEAKER 2 ============================
+  {
+    id:'baroque', label:'HIGH RENAISSANCE', dates:'1508 – 1512',
+    title:['The gap between','the <b>fingertips</b>.'],
+    tagline:'On a Sistine ceiling, Michelangelo paints the most charged negative space in Western art.',
+    doorColor:'#6d2e46', accent:'#d4af7f',
+    prose:`<p>From 1508 to 1512, Michelangelo paints the ceiling of the Sistine Chapel. At its centre: God, swept along on a wind of angels, reaches across a sliver of space toward Adam. Their fingertips do not touch.</p><p>That gap is the most loaded negative space in Western art. Look closely at the two hands. <em>God's</em> arm is fully extended, every muscle straining toward Adam — a divine love so powerful it crosses the cosmos to find one man. But <em>Adam's</em> hand is limp, his finger barely lifted. He has to do almost nothing. He just has to <strong>move his finger a fraction of an inch</strong> to be connected.</p><p>That is the whole theology of the painting. God's love is overwhelming, infinite, already there — already reaching. The minimal energy required is on our side. God is always present for us. It is on <em>us</em> to accept Him, to make the small move toward connection. Love, in this image, is not earned through ordeal the way the Greeks imagined it. It is offered freely, and waiting only for our willingness to receive it.</p><p>Frank Lynn Meshberger, writing in <em>JAMA</em> in 1990, argued that the cloak surrounding God is an anatomically precise cross-section of a human brain. If he is right, Michelangelo painted love giving Adam not just life but <em>mind</em> — the capacity to recognise that a gap exists, and to want to close it.</p><p>It is the Renaissance's defining image, and it sets the agenda for everything Bernini, Caravaggio, and Rembrandt will spend the next two hundred years trying to surpass.</p>`,
+    theory:{label:'The brain in the cloak', thinker:'Frank Lynn Meshberger · JAMA · 1990', idea:'The shape framing God matches a sagittal cross-section of a human brain — frontal lobe, brainstem, pituitary stalk. Love does not just animate Adam. It hands him consciousness itself — and, with it, the freedom to reach back, or not.'},
+    quote:{text:'Love is a continuous desire to enjoy the beautiful.', attr:'Marsilio Ficino · De Amore · 1469'},
+    tags:['<b>Érōs</b> → <b>Agápē</b>','the gap','<b>Michelangelo</b> · <b>Meshberger</b>'],
+    artwork:'teresa', artCaption:'The Creation of Adam · Michelangelo · 1508–12 · Sistine Chapel'
+  },
+  {
+  id:'rococo', label:'ROCOCO', dates:'c. 1680 – 1789',
+  title:['Love as game.','Love as <b>pink silk</b>.'],
+  tagline:'The Ancien Régime turns intimacy into theatre — and sells tickets.',
+  doorColor:'#c99987', accent:'#f4ede4',
+  prose:`<p>Fragonard's <em>The Swing</em> (c. 1767, Wallace Collection). On the surface, the defining Rococo scene — a woman in pink silk, a swing, a garden, soft afternoon light. Easy to dismiss as decorative.</p><p>But look closer. Her slipper sails toward a Cupid statue — and in Rococo iconography, the slipper represents <strong>chastity</strong>, which she has literally cast off. The Cupid holds a finger to its lips: silence, secrecy, complicity. Concealed in the bushes below, looking up, is her lover. The man pushing the swing from the shadows, oblivious, is her husband. The composition is a love triangle, with the husband as the unknowing engine of his own betrayal.</p><p>The original commission was even more explicit. A French nobleman approached a religious painter with this exact scene — except in his version, the figure pushing the swing was a <em>bishop</em>. The painter refused on moral grounds. Fragonard took the job, swapped the bishop for an ordinary man, and made his masterpiece.</p><p>This is what John Alan Lee would later call <em>ludus</em> — love as game, flirtation, low-commitment theatre. Not the deep agápē of the Renaissance, not the ordeal of Greek myth. Love treated as aesthetic consumption. Both the libertine current (Laclos's <em>Liaisons dangereuses</em>) and the sentimental one (Rousseau's <em>Julie</em>) agree on the central shift: love is now <strong>private entertainment</strong>, no longer a public or sacred matter. Two hundred and fifty years before the dating app, the painting already argues that love can be a game — the first whisper of what Bauman would call <em>liquid love</em>.</p>`,
+  theory:{label:'Love as play', thinker:'John Alan Lee · 1973', idea:'Ludus — love as game, flirtation, low-commitment theatre. The Rococo is the first era to treat love as aesthetic consumerism: proto-liquid.'},
+  quote:{text:'An ever-moving, ever-sparkling surface, under which lies nothing at all.', attr:'on Rococo intimacy'},
+  tags:['<b>Ludus</b>','<b>dismissive</b>','<b>Lee</b> · proto-<b>Bauman</b>'],
+  artwork:'swing', artCaption:'The Swing · Fragonard · c. 1767 · Wallace Collection'
+},
+  {
+    id:'goya', label:'SPANISH ROMANTICISM', dates:'1814',
+    title:['Love worth','<b>dying for</b>.'],
+    tagline:'A firing squad. A man with arms thrown wide. The moment one person\'s love for others becomes the willingness to be shot for them.',
+    doorColor:'#4a1b2a', accent:'#c99987',
+    prose:`<p>Francisco Goya painted <em>The Third of May 1808</em> in 1814, six years after the event it depicts. On that night, French soldiers under Napoleon executed Spanish civilians by lantern light, in retaliation for a popular uprising the day before. Goya made the painting to ensure the dead would not be forgotten.</p><p>At the centre, a man in a white shirt kneels before the firing squad. His arms are thrown wide — the unmistakable posture of the crucifixion. His eyes are open. He is terrified, and he is not looking away. Around him lie the bodies of those already shot. Behind him, others wait their turn, some praying, some covering their faces. The French soldiers are faceless, mechanical, a wall of rifles.</p><p>This painting is about <strong>love through self-sacrifice</strong>. The man in the white shirt is not a soldier. He is an ordinary person who chose, in the final seconds of his life, not to renounce what he loved — his country, his neighbours, his right to resist. To love something more than your own life is the most extreme expression love can take. Goya understood that this is not the absence of fear. It is fear refusing to win.</p><p>It is also a painting about <strong>shared humanity</strong>. Goya does not show us heroes. He shows us a baker, a labourer, a man kneeling next to a corpse. The faceless soldiers are stripped of their humanity precisely because they have stopped seeing the men in front of them as fellow human beings. The painting's moral force comes from this contrast: the executioners have lost what makes love possible, and the executed still carry it, all the way to the end.</p><p>This is the foundation of every revolution that follows. Before a crowd can love its country enough to fight for it — before Delacroix can paint Liberty leading the people across a barricade — one person, somewhere, has to look down the barrels of rifles and refuse to stop seeing the people beside them as their own.</p>`,
+    theory:{label:'Love as recognition', thinker:'Erich Fromm · The Art of Loving · 1956', idea:'Fromm argues that love at its deepest is the active concern for the life and growth of another, even at cost to oneself. The man in the white shirt embodies this: love is not the feeling, it is the choice — to recognise the other as fully human, and to act on that recognition no matter the price.'},
+    quote:{text:'To love means to commit oneself without guarantee.', attr:'Erich Fromm · The Art of Loving'},
+    tags:['<b>self-sacrifice</b>','<b>shared humanity</b>','<b>Goya</b> · <b>Fromm</b>'],
+    artwork:'mother', artCaption:'The Third of May 1808 · Francisco Goya · 1814 · Museo del Prado'
+  },
+  // ============================ SPEAKER 3 ============================
+  {
+    id:'romantic', label:'ROMANTIC ERA', dates:'1830',
+    title:['Love, enlarged','beyond the <b>self</b>.'],
+    tagline:'Love is not only for one person. It can be for a country, a cause, a ladder onto every barricade.',
+    doorColor:'#4a1b2a', accent:'#c99987',
+    prose:`<p><em>Liberty Leading the People</em>, also known as <em>Marianne</em>, was painted by Eugène Delacroix in 1830. The work depicts revolutionaries following Marianne over a barricade toward freedom, fighting valiantly against oppression. Looking closely, you see the grim reality of the struggle. In the foreground, fallen revolutionaries lie injured or dead, while those behind Marianne — who is elevated and leading the pack — press forward to continue the battle. Since its creation, Marianne has become a primary symbol of the French Republic, appearing on coins, postcards, and national icons.</p><p>This depiction of fighting for freedom and devotion to one's nation perfectly represents <strong>Erich Fromm's idea that love is an art</strong>. In our course, we have expanded on the premise that practising love as an art requires <em>discipline, concentration,</em> and <em>patience</em>. <em>Liberty Leading the People</em> exhibits how these factors are utilised within the fight for liberation and the love for one's country.</p><p>The discipline of the organised surge against a professional military force, the concentration of a singular focus on liberty despite the chaos of war, and the patience required to endure losses while waiting for change — all reflect Fromm's criteria. Within revolutions, success for the insurgent side is dependent on fighting with a foundation of love. This is apparent throughout Delacroix's masterpiece: there is a clear passion for the liberation of France.</p><p>Ultimately, love as an art does not only apply to romantic relationships. It applies equally to the love of one's country — provided it is practised with the same intentionality and mastery as any other art form.</p>`,
+    theory:{label:'Love is an art', thinker:'Erich Fromm · The Art of Loving · 1956', idea:'Fromm insists love is not a feeling but a practice — requiring discipline, concentration, patience, and faith. The same applies whether the object is a person or a country. Marianne stands at the top of the barricade because someone, somewhere, did the work.'},
+    quote:{text:'Love isn\'t something natural. Rather it requires discipline, concentration, patience, faith, and the overcoming of narcissism.', attr:'Erich Fromm · The Art of Loving'},
+    tags:['<b>Agápē</b> · <b>patriotic love</b>','<b>Fromm</b>','love as practice'],
+    artwork:'liberty', artCaption:'Liberty Leading the People · Eugène Delacroix · 1830 · Louvre'
+  },
+  {
+    id:'modern', label:'ADOLESCENT LOVE', dates:'photograph 1959',
+    title:['Love at its','<b>most intense</b>.'],
+    tagline:'A Brooklyn dance hall, teenagers leaning in. Adolescence is where love feels like the whole world.',
+    doorColor:'#5a3b44', accent:'#c99987',
+    prose:`<p>Moving into a more modern depiction of love, this is a photograph by Bruce Davidson, from his <em>Brooklyn Gang</em> series of 1959. The main focus is on a young woman and a young man dancing closely in the centre, while on the sides we see other couples doing the same. Across the photograph, there is clear joy — their faces are filled with smiles, and there is a strong physical closeness across the whole group.</p><p>As we spoke about in class during our <em>Love in Adolescence</em> unit, this period of life is the peak of lust and dopamine. Teenagers have a heightened desire for social engagement. Neurological changes drive emotional intensity — and as we saw through examples like Romeo and Juliet, feelings that might be ordinary to an adult are <strong>amplified into life-altering experiences</strong> for an adolescent. This photograph directly captures that hyper-sensitive period, where social connection itself feels like an immediate reward.</p><p>The way the couple lean into one another captures the essence of adolescence. They are seemingly oblivious to the outside world — but those inside the photograph understand exactly what they feel for one another. Davidson's image is about the emotional bonds teenagers form, in an active and sensitive time of their lives, when love arrives without warning and shows up at full volume.</p>`,
+    theory:{label:'The neurochemistry of first love', thinker:'Helen Fisher · adolescent attraction studies', idea:'In adolescence, dopamine, norepinephrine, and oxytocin all spike at once. The reward circuit is more reactive than at any other point in life — which is why first love feels overwhelming, all-consuming, and impossible to forget. The teenage brain is literally wired to make these bonds register as life-defining.'},
+    quote:{text:'I love you because there is something in you more than yourself.', attr:'Slavoj Žižek · on Lacan\'s objet a'},
+    tags:['<b>adolescent love</b>','<b>peak dopamine</b>','<b>Davidson</b> · <b>Fisher</b> · <b>Žižek</b>'],
+    artwork:'magritte', artCaption:'Brooklyn Gang · Bruce Davidson · 1959'
+  },
+  {
+    id:'contemporary', label:'CONTEMPORARY', dates:'1991',
+    title:['Love and loss,','as <b>175 pounds of candy</b>.'],
+    tagline:'A pile that gets eaten and refilled. A weight that holds a life.',
+    doorColor:'#2b1318', accent:'#b8894e',
+    prose:`<p>This piece is an extremely interesting and artistic way to express love and loss. Created by Felix Gonzalez-Torres in 1991, it is a pile of shiny commercial candy that weighs 175 pounds. That weight represents the weight of Torres' partner, <em>Ross Laycock</em>, who died of complications from AIDS that same year.</p><p>The piece is interactive. The weight decreases as audience members take pieces — representing the weight loss that Laycock endured during his illness. The piece works through a single juxtaposition: it is there to physically represent his declining health, but the candy itself signifies the <strong>sweetness of the relationship and their life together</strong>.</p><p>In our lessons on the <em>Loss of Love</em>, we explored the foundational concept that heartbreak is part of love. Through Alfred, Lord Tennyson's famous quote — <em>"'Tis better to have loved and lost than never to have loved"</em> — we understand the bittersweetness that comes from love and heartbreak. Torres' work captures this juxtaposition exactly, and its interactive elements help the audience further understand the idea.</p><p>Torres requires the museum to <strong>replenish</strong> the piece when it is getting low — a way of keeping Laycock everlasting. This reflects the comforting idea that even within loss, love prevails. It is better to remember the sweet moments throughout the hard ones. The piece demonstrates that love and connection exist past physical loss — whether that loss is death or a breakup. The relationship may be gone, but the love itself remains with you.</p>`,
+    theory:{label:'Love is what disturbs us', thinker:'Slavoj Žižek', idea:'Žižek calls love a "cosmic imbalance" — not a sweet harmony, but something that shatters the smooth flow of your life. The Ross pile is exactly this: a wound in the museum, a hole that has to be filled and re-filled and re-filled. Love, even after death, refuses to let you settle.'},
+    quote:{text:'Love is the minimal form of communism.', attr:'Alain Badiou · In Praise of Love'},
+    tags:['<b>love and loss</b>','<b>bittersweet</b>','<b>Gonzalez-Torres</b> · <b>Žižek</b>'],
+    artwork:'ross', artCaption:'"Untitled" (Portrait of Ross in L.A.) · Gonzalez-Torres · 1991'
+  }
+];
+
+// ===========================================================================
+// ARTWORK IMAGES
+// ===========================================================================
+const ART = {
+  ainSakhri: `<img src="cupids_kiss.webp" alt="Psyche Revived by Cupid's Kiss">`,
+  unicorn:   `<img src="unicorn.jpg" alt="The Lady and the Unicorn">`,
+  hands:     `<img src="primavera.jpg" alt="Primavera">`,
+  teresa:    `<img src="creation_of_adam.jpg" alt="The Creation of Adam">`,
+  swing:     `<img src="swing.jpg" alt="The Swing">`,
+  mother:    `<img src="goya.webp" alt="The Third of May 1808">`,
+  liberty:   `<img src="liberty.jpg" alt="Liberty Leading the People">`,
+  magritte:  `<img src="love_davidson.jpg" alt="Brooklyn Gang">`,
+  ross:      `<img src="ross.jpg" alt="Untitled (Portrait of Ross in L.A.)">`
+};
+// ===========================================================================
+// GAME STATE
+// ===========================================================================
+const state = {
+  avatarX: 300,
+  speed: 0,
+  walkingLeft: false,
+  walkingRight: false,
+  camera: 0,
+  visited: new Set(),
+  currentDoor: null,
+  walkFrame: 0,
+  walkPhase: 0,
+  roomOpen: false,
+  facing: 1,
+  // Speaker handoff state
+  currentSpeaker: 0,
+  jumpY: 0,
+  jumpVel: 0,
+  isJumping: false,
+  exitingSpeaker: null,
+  exitingAlpha: 0,
+  exitingX: 0,
+  reachedBoundary: [false, false],
+  landingDustTimer: 0,
+  thesisShown: false               // ensures the thesis overlay only auto-fires once
+};
+
+// Door positions along corridor
+const DOOR_SPACING = 360;
+const DOOR_OFFSET = 600;
+ERAS.forEach((era, i) => {
+  era.x = DOOR_OFFSET + i * DOOR_SPACING;
+});
+const WORLD_WIDTH = DOOR_OFFSET + ERAS.length * DOOR_SPACING + 600;
+
+const SPEAKER_BOUNDARIES = [
+  (ERAS[2].x + ERAS[3].x) / 2,
+  (ERAS[5].x + ERAS[6].x) / 2
+];
+
+// ===========================================================================
+// CANVAS SETUP
+// ===========================================================================
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W = 0, H = 0;
+function resize() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ===========================================================================
+// INPUT
+// ===========================================================================
+const keys = {};
+window.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  if (state.roomOpen) {
+    if (k === 'escape') closeRoom();
+    return;
+  }
+  // Press T to manually show the thesis (useful for live demos / re-triggering finale)
+  if (k === 't') {
+    document.getElementById('thesis').classList.add('show');
+    return;
+  }
+  if ((k === 'arrowup' || k === 'w' || k === 'e' || k === ' ') && state.currentDoor !== null) {
+    e.preventDefault();
+    openRoom(state.currentDoor);
+  }
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+// Mobile buttons
+document.getElementById('btn-left').addEventListener('touchstart', e => { e.preventDefault(); keys['arrowleft'] = true; });
+document.getElementById('btn-left').addEventListener('touchend', e => { e.preventDefault(); keys['arrowleft'] = false; });
+document.getElementById('btn-left').addEventListener('mousedown', () => keys['arrowleft'] = true);
+document.getElementById('btn-left').addEventListener('mouseup', () => keys['arrowleft'] = false);
+document.getElementById('btn-left').addEventListener('mouseleave', () => keys['arrowleft'] = false);
+
+document.getElementById('btn-right').addEventListener('touchstart', e => { e.preventDefault(); keys['arrowright'] = true; });
+document.getElementById('btn-right').addEventListener('touchend', e => { e.preventDefault(); keys['arrowright'] = false; });
+document.getElementById('btn-right').addEventListener('mousedown', () => keys['arrowright'] = true);
+document.getElementById('btn-right').addEventListener('mouseup', () => keys['arrowright'] = false);
+document.getElementById('btn-right').addEventListener('mouseleave', () => keys['arrowright'] = false);
+
+document.getElementById('btn-enter').addEventListener('click', () => {
+  if (state.currentDoor !== null && !state.roomOpen) openRoom(state.currentDoor);
+});
+
+// ===========================================================================
+// BEGIN
+// ===========================================================================
+document.getElementById('begin-btn').addEventListener('click', () => {
+  document.getElementById('intro').classList.add('hidden');
+  requestAnimationFrame(loop);
+});
+
+// ===========================================================================
+// DRAWING — the corridor
+// ===========================================================================
+function drawBackground() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#1a0a0d');
+  g.addColorStop(0.35, '#2b1318');
+  g.addColorStop(0.6, '#3a1820');
+  g.addColorStop(1, '#4a1b2a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = 'rgba(184,137,78,0.08)';
+  ctx.fillRect(0, 0, W, H * 0.15);
+
+  const parallax = state.camera * 0.3;
+  ctx.save();
+  for (let i = -1; i < Math.ceil(WORLD_WIDTH / 250) + 1; i++) {
+    const cx = i * 250 - (parallax % 250);
+    drawChandelier(cx, H * 0.13);
+  }
+  ctx.restore();
+}
+
+function drawChandelier(x, y) {
+  ctx.save();
+  ctx.translate(x, 0);
+  ctx.strokeStyle = 'rgba(184,137,78,0.35)';
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, y);
+  ctx.stroke();
+  const grad = ctx.createRadialGradient(0, y + 6, 0, 0, y + 6, 22);
+  grad.addColorStop(0, 'rgba(212,175,127,0.9)');
+  grad.addColorStop(1, 'rgba(212,175,127,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(0, y + 6, 22, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#d4af7f';
+  ctx.beginPath();
+  ctx.arc(0, y + 6, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawFloor() {
+  const floorY = H * 0.75;
+  const g = ctx.createLinearGradient(0, floorY, 0, H);
+  g.addColorStop(0, '#5a3b44');
+  g.addColorStop(0.3, '#3a2530');
+  g.addColorStop(1, '#1a0a0d');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, floorY, W, H - floorY);
+
+  ctx.strokeStyle = 'rgba(184,137,78,0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, floorY);
+  ctx.lineTo(W, floorY);
+  ctx.stroke();
+
+  const parallax = state.camera;
+  ctx.strokeStyle = 'rgba(184,137,78,0.1)';
+  for (let i = 0; i < 20; i++) {
+    const lx = (i * 80 - parallax % 80);
+    ctx.beginPath();
+    ctx.moveTo(lx, floorY);
+    ctx.lineTo(lx - 60, H);
+    ctx.stroke();
+  }
+}
+
+function drawWall() {
+  const wallTop = H * 0.15;
+  const wallBottom = H * 0.75;
+  ctx.fillStyle = '#3a1820';
+  ctx.fillRect(0, wallTop, W, wallBottom - wallTop);
+
+  const parallax = state.camera;
+  ctx.strokeStyle = 'rgba(184,137,78,0.15)';
+  ctx.lineWidth = 1;
+  for (let i = -1; i < Math.ceil(WORLD_WIDTH / 180) + 1; i++) {
+    const px = i * 180 - parallax + 10;
+    if (px > -200 && px < W + 200) {
+      const isNearDoor = ERAS.some(era => {
+        const doorScreenX = era.x - state.camera;
+        return Math.abs(px + 80 - doorScreenX) < 120;
+      });
+      if (!isNearDoor) {
+        ctx.strokeRect(px, wallTop + 30, 160, wallBottom - wallTop - 60);
+        ctx.strokeRect(px + 8, wallTop + 38, 144, wallBottom - wallTop - 76);
+      }
+    }
+  }
+
+  ctx.strokeStyle = 'rgba(184,137,78,0.5)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, wallTop);
+  ctx.lineTo(W, wallTop);
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(184,137,78,0.3)';
+  ctx.beginPath();
+  ctx.moveTo(0, wallTop + 6);
+  ctx.lineTo(W, wallTop + 6);
+  ctx.stroke();
+}
+
+function drawDoor(era, isNear, isVisited) {
+  const x = era.x - state.camera;
+  if (x < -200 || x > W + 200) return;
+
+  const wallTop = H * 0.15;
+  const floorY = H * 0.75;
+  const doorW = 130;
+  const doorH = floorY - wallTop - 80;
+  const doorX = x - doorW / 2;
+  const doorY = wallTop + 50;
+
+  ctx.fillStyle = isNear ? '#d4af7f' : '#b8894e';
+  ctx.fillRect(doorX - 10, doorY - 10, doorW + 20, doorH + 10);
+
+  ctx.fillStyle = '#2b1318';
+  ctx.fillRect(doorX - 4, doorY - 4, doorW + 8, doorH + 4);
+
+  const g = ctx.createLinearGradient(doorX, 0, doorX + doorW, 0);
+  g.addColorStop(0, era.doorColor);
+  g.addColorStop(0.5, shade(era.doorColor, 1.2));
+  g.addColorStop(1, era.doorColor);
+  ctx.fillStyle = g;
+  ctx.fillRect(doorX, doorY, doorW, doorH);
+
+  ctx.fillStyle = '#2b1318';
+  ctx.beginPath();
+  ctx.moveTo(doorX, doorY);
+  ctx.quadraticCurveTo(doorX + doorW / 2, doorY - 35, doorX + doorW, doorY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(doorX + 4, doorY);
+  ctx.quadraticCurveTo(doorX + doorW / 2, doorY - 30, doorX + doorW - 4, doorY);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(doorX + 12, doorY + 15, doorW - 24, doorH * 0.4);
+  ctx.strokeRect(doorX + 12, doorY + 15 + doorH * 0.45, doorW - 24, doorH * 0.4);
+
+  ctx.fillStyle = '#b8894e';
+  ctx.beginPath();
+  ctx.arc(doorX + doorW - 18, doorY + doorH / 2, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.fillStyle = isNear ? '#f4ede4' : '#d4af7f';
+  ctx.font = '600 10px Calibri, Helvetica, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  const labelY = doorY - 42;
+  ctx.save();
+  ctx.fillStyle = 'rgba(43,19,24,0.8)';
+  const labelW = ctx.measureText(era.label).width + 16;
+  ctx.fillRect(x - labelW / 2, labelY - 14, labelW, 18);
+  ctx.strokeStyle = era.accent;
+  ctx.lineWidth = 0.5;
+  ctx.strokeRect(x - labelW / 2, labelY - 14, labelW, 18);
+  ctx.restore();
+  ctx.fillStyle = isNear ? '#f4ede4' : '#d4af7f';
+  ctx.fillText(era.label, x, labelY);
+  ctx.restore();
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(201,153,135,0.7)';
+  ctx.font = 'italic 9px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(era.dates, x, doorY - 20);
+  ctx.restore();
+
+  if (isVisited) {
+    ctx.save();
+    ctx.translate(x, doorY + doorH / 2);
+    ctx.fillStyle = '#d4af7f';
+    ctx.strokeStyle = '#4a1b2a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = (i * 2 * Math.PI) / 5 - Math.PI / 2;
+      const r = i % 2 === 0 ? 10 : 4;
+      const px = Math.cos(a) * r;
+      const py = Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (isNear) {
+    ctx.save();
+    const glow = ctx.createRadialGradient(x, doorY + doorH / 2, 20, x, doorY + doorH / 2, 160);
+    glow.addColorStop(0, 'rgba(212,175,127,0.3)');
+    glow.addColorStop(1, 'rgba(212,175,127,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - 160, doorY - 50, 320, doorH + 100);
+    ctx.restore();
+  }
+}
+
+function shade(hex, factor) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const nr = Math.min(255, Math.floor(r * factor));
+  const ng = Math.min(255, Math.floor(g * factor));
+  const nb = Math.min(255, Math.floor(b * factor));
+  return '#' + [nr, ng, nb].map(n => n.toString(16).padStart(2, '0')).join('');
+}
+
+// ===========================================================================
+// AVATAR SYSTEM — three speakers with jump-down handoff
+// ===========================================================================
+
+function drawSpeaker1(walkPhase, walking, facing) {
+  ctx.save();
+  ctx.scale(facing, 1);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(0, 2, 18, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const legSwing = Math.sin(walkPhase) * (walking ? 10 : 0);
+  ctx.fillStyle = '#2b1318';
+  ctx.fillRect(-10, -38, 8, 18);
+  ctx.fillRect(2, -38, 8, 18);
+  ctx.strokeStyle = '#a8745c';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-6, -22);
+  ctx.lineTo(-6 + legSwing * 0.5, -6);
+  ctx.moveTo(6, -22);
+  ctx.lineTo(6 - legSwing * 0.5, -6);
+  ctx.stroke();
+  ctx.fillStyle = '#f4ede4';
+  ctx.beginPath();
+  ctx.ellipse(-6 + legSwing * 0.5, -3, 7, 3.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(6 - legSwing * 0.5, -3, 7, 3.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#6d2e46';
+  ctx.beginPath();
+  ctx.moveTo(-17, -72);
+  ctx.lineTo(-18, -40);
+  ctx.lineTo(-14, -38);
+  ctx.lineTo(14, -38);
+  ctx.lineTo(18, -40);
+  ctx.lineTo(17, -72);
+  ctx.lineTo(13, -76);
+  ctx.lineTo(-13, -76);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#a8745c';
+  ctx.beginPath();
+  ctx.moveTo(-17, -72);
+  ctx.quadraticCurveTo(-22, -62, -18, -52);
+  ctx.lineTo(-18, -60);
+  ctx.lineTo(-17, -72);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(17, -72);
+  ctx.quadraticCurveTo(22, -62, 18, -52);
+  ctx.lineTo(18, -60);
+  ctx.lineTo(17, -72);
+  ctx.fill();
+  ctx.strokeStyle = '#f4ede4';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-14, -38); ctx.lineTo(14, -38);
+  ctx.stroke();
+  ctx.fillStyle = '#f4ede4';
+  ctx.font = 'bold 11px Arial';
+  ctx.textAlign = 'center';
+  ctx.save();
+  ctx.scale(facing, 1);
+  ctx.fillText('1', 0, -54);
+  ctx.restore();
+
+  const armSwing = Math.sin(walkPhase) * (walking ? 4 : 0);
+  ctx.strokeStyle = '#a8745c';
+  ctx.lineWidth = 6;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-16, -68);
+  ctx.lineTo(-20 - armSwing, -42);
+  ctx.moveTo(16, -68);
+  ctx.lineTo(20 + armSwing, -42);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#d4af7f';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-7, -73);
+  ctx.quadraticCurveTo(0, -66, 7, -73);
+  ctx.stroke();
+  ctx.fillStyle = '#d4af7f';
+  ctx.beginPath();
+  ctx.arc(0, -65, 2.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#b8894e';
+  ctx.lineWidth = 0.6;
+  ctx.stroke();
+
+  ctx.fillStyle = '#a8745c';
+  ctx.fillRect(-4, -79, 8, 6);
+
+  ctx.fillStyle = '#b58269';
+  ctx.beginPath();
+  ctx.arc(0, -86, 9, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#1a0a0d';
+  const curls = [
+    [-7, -92, 4.5], [-3, -94, 4.8], [2, -94, 4.8], [6, -92, 4.5],
+    [-9, -89, 4], [8, -89, 4],
+    [-5, -96, 4], [0, -96.5, 4.2], [4, -96, 4],
+    [-2, -92, 3.5], [2, -92, 3.5]
+  ];
+  curls.forEach(c => {
+    ctx.beginPath();
+    ctx.arc(c[0], c[1], c[2], 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.beginPath();
+  ctx.arc(-8, -84, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(8, -84, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#1a0a0d';
+  ctx.beginPath();
+  ctx.arc(3, -85, 1.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSpeaker2(walkPhase, walking, facing) {
+  ctx.save();
+  ctx.scale(facing, 1);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(0, 2, 18, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const legSwing = Math.sin(walkPhase) * (walking ? 10 : 0);
+  ctx.strokeStyle = '#2a3040';
+  ctx.lineWidth = 7;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-4, -35);
+  ctx.lineTo(-6 + legSwing * 0.5, -4);
+  ctx.moveTo(4, -35);
+  ctx.lineTo(6 - legSwing * 0.5, -4);
+  ctx.stroke();
+  ctx.fillStyle = '#1a0a0d';
+  ctx.beginPath();
+  ctx.ellipse(-6 + legSwing * 0.5, -2, 6.5, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(6 - legSwing * 0.5, -2, 6.5, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#f4ede4';
+  ctx.beginPath();
+  ctx.moveTo(-16, -72);
+  ctx.lineTo(-18, -40);
+  ctx.lineTo(-12, -37);
+  ctx.lineTo(12, -37);
+  ctx.lineTo(18, -40);
+  ctx.lineTo(16, -72);
+  ctx.quadraticCurveTo(0, -79, -16, -72);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.beginPath();
+  ctx.moveTo(-14, -50);
+  ctx.lineTo(-12, -40);
+  ctx.lineTo(-8, -40);
+  ctx.lineTo(-10, -50);
+  ctx.fill();
+  ctx.strokeStyle = '#c8c0b4';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-6, -76);
+  ctx.quadraticCurveTo(0, -72, 6, -76);
+  ctx.stroke();
+
+  const armSwing = Math.sin(walkPhase) * (walking ? 4 : 0);
+  ctx.fillStyle = '#f4ede4';
+  ctx.fillRect(-19, -72, 5, 14);
+  ctx.fillRect(14, -72, 5, 14);
+  ctx.strokeStyle = '#e8c4a8';
+  ctx.lineWidth = 5.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-16, -58);
+  ctx.lineTo(-19 - armSwing, -36);
+  ctx.moveTo(16, -58);
+  ctx.lineTo(19 + armSwing, -36);
+  ctx.stroke();
+
+  ctx.fillStyle = '#e8c4a8';
+  ctx.fillRect(-4, -80, 8, 6);
+
+  ctx.fillStyle = '#f0d0b0';
+  ctx.beginPath();
+  ctx.arc(0, -87, 9, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#d9b066';
+  ctx.beginPath();
+  ctx.arc(0, -89, 10, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(-10, -89);
+  ctx.quadraticCurveTo(-14, -85, -11, -78);
+  ctx.quadraticCurveTo(-6, -82, -1, -84);
+  ctx.quadraticCurveTo(-3, -90, -10, -89);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(10, -89);
+  ctx.quadraticCurveTo(14, -85, 11, -78);
+  ctx.quadraticCurveTo(6, -82, 1, -84);
+  ctx.quadraticCurveTo(3, -90, 10, -89);
+  ctx.fill();
+  ctx.strokeStyle = '#b08a4a';
+  ctx.lineWidth = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(0, -96);
+  ctx.lineTo(0, -85);
+  ctx.stroke();
+  ctx.strokeStyle = '#f0d585';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(-6, -93);
+  ctx.quadraticCurveTo(-2, -96, 0, -96);
+  ctx.stroke();
+
+  ctx.fillStyle = '#3a5070';
+  ctx.beginPath();
+  ctx.arc(3, -86, 1.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawSpeaker3(walkPhase, walking, facing) {
+  ctx.save();
+  ctx.scale(facing, 1);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(0, 2, 17, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  const legSwing = Math.sin(walkPhase) * (walking ? 10 : 0);
+  ctx.strokeStyle = '#1a0a0d';
+  ctx.lineWidth = 5.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-3, -32);
+  ctx.lineTo(-5 + legSwing * 0.5, -4);
+  ctx.moveTo(3, -32);
+  ctx.lineTo(5 - legSwing * 0.5, -4);
+  ctx.stroke();
+  ctx.fillStyle = '#2b1318';
+  ctx.beginPath();
+  ctx.ellipse(-5 + legSwing * 0.5, -2, 5.5, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(5 - legSwing * 0.5, -2, 5.5, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#8a3848';
+  ctx.beginPath();
+  ctx.moveTo(-14, -70);
+  ctx.lineTo(-18, -32);
+  ctx.lineTo(-8, -30);
+  ctx.lineTo(8, -30);
+  ctx.lineTo(18, -32);
+  ctx.lineTo(14, -70);
+  ctx.quadraticCurveTo(0, -77, -14, -70);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = '#5a1f2c';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-12, -52); ctx.lineTo(12, -52);
+  ctx.stroke();
+  ctx.strokeStyle = '#d4af7f';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(-5, -72);
+  ctx.quadraticCurveTo(0, -68, 5, -72);
+  ctx.stroke();
+
+  const armSwing = Math.sin(walkPhase) * (walking ? 4 : 0);
+  ctx.strokeStyle = '#e8c4a8';
+  ctx.lineWidth = 4.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-14, -65);
+  ctx.lineTo(-17 - armSwing, -42);
+  ctx.moveTo(14, -65);
+  ctx.lineTo(17 + armSwing, -42);
+  ctx.stroke();
+
+  ctx.fillStyle = '#e8c4a8';
+  ctx.fillRect(-3, -77, 6, 5);
+
+  ctx.fillStyle = '#f0d0b0';
+  ctx.beginPath();
+  ctx.arc(0, -85, 8.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#4a2818';
+  ctx.beginPath();
+  ctx.moveTo(-9, -85);
+  ctx.quadraticCurveTo(-14, -75, -13, -55);
+  ctx.quadraticCurveTo(-14, -45, -10, -42);
+  ctx.lineTo(-6, -50);
+  ctx.quadraticCurveTo(-8, -70, -5, -80);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(9, -85);
+  ctx.quadraticCurveTo(14, -75, 13, -55);
+  ctx.quadraticCurveTo(14, -45, 10, -42);
+  ctx.lineTo(6, -50);
+  ctx.quadraticCurveTo(8, -70, 5, -80);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0, -87, 9.5, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#6b3a22';
+  ctx.lineWidth = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(-6, -92); ctx.quadraticCurveTo(0, -95, 6, -92);
+  ctx.stroke();
+
+  ctx.fillStyle = '#3a2820';
+  ctx.beginPath();
+  ctx.arc(3, -84, 1.1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#1a0a0d';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(2, -85); ctx.lineTo(1.5, -86);
+  ctx.moveTo(4, -85); ctx.lineTo(4.5, -86);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#a04858';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(1, -81); ctx.quadraticCurveTo(3, -80, 5, -81);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawSpeakerByIndex(i, walkPhase, walking, facing) {
+  if (i === 0) drawSpeaker1(walkPhase, walking, facing);
+  else if (i === 1) drawSpeaker2(walkPhase, walking, facing);
+  else drawSpeaker3(walkPhase, walking, facing);
+}
+
+function drawAvatar() {
+  const x = state.avatarX - state.camera;
+  const floorY = H * 0.75;
+  const y = floorY - 5;
+
+  if (state.exitingSpeaker !== null && state.exitingAlpha > 0) {
+    const ex = state.exitingX - state.camera;
+    ctx.save();
+    ctx.globalAlpha = state.exitingAlpha;
+    ctx.translate(ex, y);
+    drawSpeakerByIndex(state.exitingSpeaker, state.walkPhase, false, 1);
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.translate(x, y + state.jumpY);
+  drawSpeakerByIndex(state.currentSpeaker, state.walkPhase, state.walkingLeft || state.walkingRight, state.facing);
+  ctx.restore();
+
+  if (state.landingDustTimer > 0) {
+    ctx.save();
+    ctx.globalAlpha = state.landingDustTimer;
+    ctx.fillStyle = 'rgba(201,153,135,0.7)';
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI + Math.PI;
+      const rad = (1 - state.landingDustTimer) * 22;
+      const dx = Math.cos(angle) * rad;
+      const dy = -Math.abs(Math.sin(angle) * rad * 0.3);
+      ctx.beginPath();
+      ctx.arc(x + dx, y + dy, 2.5 * state.landingDustTimer, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// ===========================================================================
+// UPDATE LOOP
+// ===========================================================================
+function update(dt) {
+  state.walkingLeft = !!(keys['arrowleft'] || keys['a']);
+  state.walkingRight = !!(keys['arrowright'] || keys['d']);
+
+  const walkSpeed = 220;
+  if (state.walkingLeft && !state.walkingRight) {
+    state.avatarX -= walkSpeed * dt;
+    state.facing = -1;
+    state.walkPhase += dt * 10;
+  } else if (state.walkingRight && !state.walkingLeft) {
+    state.avatarX += walkSpeed * dt;
+    state.facing = 1;
+    state.walkPhase += dt * 10;
+  }
+
+  state.avatarX = Math.max(100, Math.min(WORLD_WIDTH - 100, state.avatarX));
+
+  const targetCamera = state.avatarX - W / 2;
+  state.camera += (targetCamera - state.camera) * 0.12;
+  state.camera = Math.max(0, Math.min(WORLD_WIDTH - W, state.camera));
+
+  for (let b = 0; b < SPEAKER_BOUNDARIES.length; b++) {
+    if (!state.reachedBoundary[b] && state.avatarX >= SPEAKER_BOUNDARIES[b]) {
+      state.reachedBoundary[b] = true;
+      state.exitingSpeaker = state.currentSpeaker;
+      state.exitingAlpha = 1;
+      state.exitingX = state.avatarX - 40 * state.facing;
+      state.currentSpeaker = b + 1;
+      state.jumpY = -Math.max(H * 0.8, 500);
+      state.jumpVel = 0;
+      state.isJumping = true;
+    }
+  }
+
+  if (state.isJumping) {
+    state.jumpVel += 2400 * dt;
+    state.jumpY += state.jumpVel * dt;
+    if (state.jumpY >= 0) {
+      state.jumpY = 0;
+      state.jumpVel = 0;
+      state.isJumping = false;
+      state.landingDustTimer = 1;
+    }
+  }
+
+  if (state.landingDustTimer > 0) {
+    state.landingDustTimer = Math.max(0, state.landingDustTimer - dt * 1.6);
+  }
+
+  if (state.exitingSpeaker !== null) {
+    state.exitingAlpha -= dt * 1.2;
+    if (state.exitingAlpha <= 0) {
+      state.exitingAlpha = 0;
+      state.exitingSpeaker = null;
+    }
+  }
+
+  let closest = null;
+  let closestDist = Infinity;
+  for (let i = 0; i < ERAS.length; i++) {
+    const d = Math.abs(state.avatarX - ERAS[i].x);
+    if (d < 70 && d < closestDist) {
+      closest = i;
+      closestDist = d;
+    }
+  }
+
+  if (closest !== state.currentDoor) {
+    state.currentDoor = closest;
+    const prompt = document.getElementById('door-prompt');
+    if (closest !== null) {
+      prompt.classList.add('show');
+      prompt.innerHTML = `<em style="font-style:italic">${ERAS[closest].label}</em>  ·  Press <kbd>E</kbd> or <kbd>↑</kbd> to enter`;
+    } else {
+      prompt.classList.remove('show');
+    }
+  }
+
+  const loc = document.getElementById('hud-location');
+  if (closest !== null) {
+    loc.textContent = ERAS[closest].label.charAt(0) + ERAS[closest].label.slice(1).toLowerCase();
+  } else {
+    loc.textContent = 'The corridor';
+  }
+  document.getElementById('hud-progress').textContent = `${state.visited.size} / 9`;
+}
+
+// ===========================================================================
+// RENDER LOOP
+// ===========================================================================
+let lastTime = 0;
+function loop(ts) {
+  const dt = Math.min(0.05, (ts - lastTime) / 1000 || 0);
+  lastTime = ts;
+
+  if (!state.roomOpen) update(dt);
+
+  ctx.clearRect(0, 0, W, H);
+  drawBackground();
+  drawWall();
+  drawFloor();
+
+  for (let i = 0; i < ERAS.length; i++) {
+    drawDoor(ERAS[i], i === state.currentDoor, state.visited.has(ERAS[i].id));
+  }
+
+  drawAvatar();
+
+  requestAnimationFrame(loop);
+}
+
+// ===========================================================================
+// ROOM OPENING
+// ===========================================================================
+function openRoom(index) {
+  const era = ERAS[index];
+  state.roomOpen = true;
+  state.visited.add(era.id);
+
+  const html = `
+    <div class="room-inner">
+      <button class="back" onclick="closeRoom()">← back to the corridor</button>
+      <div class="era-label">${era.label}</div>
+      <div class="dates">${era.dates}</div>
+      <h1>${era.title[0]}<br>${era.title[1]}</h1>
+      <div class="tagline">${era.tagline}</div>
+      <hr class="ornament">
+      <div class="grid">
+        <div>
+          <div class="artwork">${ART[era.artwork] || ''}<div class="cap">${era.artCaption}</div></div>
+          <div class="tags">${era.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        </div>
+        <div>
+          <div class="prose">${era.prose}</div>
+          <div class="theory">
+            <div class="label">${era.theory.label}</div>
+            <div class="thinker">${era.theory.thinker}</div>
+            <div class="idea">${era.theory.idea}</div>
+          </div>
+          <div class="quote">
+            <div class="text">"${era.quote.text}"</div>
+            <div class="attr">${era.quote.attr}</div>
+          </div>
+        </div>
+      </div>
+      <div class="room-footer">
+        <button class="nav-btn" ${index === 0 ? 'disabled' : `onclick="openRoom(${index - 1})"`}>← ${index > 0 ? ERAS[index - 1].label : ''}</button>
+        <div class="era-num">${index + 1} / 9</div>
+        <button class="nav-btn" ${index === ERAS.length - 1 ? 'disabled' : `onclick="openRoom(${index + 1})"`}>${index < ERAS.length - 1 ? ERAS[index + 1].label : ''} →</button>
+      </div>
+    </div>
+  `;
+
+  const room = document.getElementById('room');
+  room.innerHTML = html;
+  room.classList.add('open');
+  room.scrollTop = 0;
+  document.getElementById('door-prompt').classList.remove('show');
+
+  state.avatarX = era.x;
+
+  // Thesis trigger — fires once, the first time you've completed all 9 doors
+  if (state.visited.size === 9 && !state.thesisShown) {
+    state.thesisShown = true;
+    setTimeout(() => {
+      document.getElementById('thesis').classList.add('show');
+    }, 800);
+  }
+}
+
+window.openRoom = openRoom;
+
+function closeRoom() {
+  state.roomOpen = false;
+  document.getElementById('room').classList.remove('open');
+}
+window.closeRoom = closeRoom;
+
+document.getElementById('thesis-close').addEventListener('click', () => {
+  document.getElementById('thesis').classList.remove('show');
+});
+
+window.addEventListener('contextmenu', e => {
+  if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+});
+
+window.addEventListener('touchmove', e => {
+  if (!state.roomOpen) e.preventDefault();
+}, { passive: false });
+
+</script>
+</body>
+</html>
